@@ -1,0 +1,735 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Happy Deepavali Stuti! 🪔✨</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Google Fonts: Fredoka & Caveat for extra cuteness -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Fredoka:wght@400;600;700&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Fredoka', 'Quicksand', sans-serif;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      overflow: hidden;
+    }
+    
+    .font-handwriting {
+      font-family: 'Caveat', cursive;
+    }
+
+    /* Glow utilities */
+    .glow-gold {
+      filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.7));
+    }
+    
+    .glow-spark {
+      filter: drop-shadow(0 0 10px #ffea00) drop-shadow(0 0 20px #ff6b00);
+    }
+
+    /* Bomb Shaking Animation during Fuse Burning */
+    @keyframes intenseVibrate {
+      0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+      20% { transform: translate(-3px, 3px) rotate(-3deg) scale(1.02); }
+      40% { transform: translate(3px, -3px) rotate(3deg) scale(1.05); }
+      60% { transform: translate(-4px, -2px) rotate(-4deg) scale(1.08); }
+      80% { transform: translate(4px, 2px) rotate(4deg) scale(1.12); }
+      100% { transform: translate(-2px, 3px) rotate(-2deg) scale(1.15); }
+    }
+
+    .animate-vibrate {
+      animation: intenseVibrate 0.12s infinite linear;
+    }
+
+    /* Floating Diya animation */
+    @keyframes floatDiya {
+      0%, 100% { transform: translateY(0px) rotate(-2deg); }
+      50% { transform: translateY(-12px) rotate(2deg); }
+    }
+    .animate-float {
+      animation: floatDiya 3s ease-in-out infinite;
+    }
+
+    /* Pulse Glow */
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.8; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.08); }
+    }
+    .animate-pulse-glow {
+      animation: pulseGlow 2s ease-in-out infinite;
+    }
+
+    /* Sparkler tip glowing pulse */
+    @keyframes sparklerTipPulse {
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px #fff); }
+      50% { transform: scale(1.3); filter: drop-shadow(0 0 18px #ffea00); }
+    }
+    .sparkler-tip-active {
+      animation: sparklerTipPulse 0.4s infinite alternate;
+    }
+
+    /* Fuse Line styling */
+    .fuse-path {
+      stroke-dasharray: 200;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 2s linear;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-b from-slate-950 via-purple-950 to-amber-950 min-h-screen text-white relative flex items-center justify-center p-4">
+
+  <!-- Background Particle / Firework Canvas -->
+  <canvas id="bgCanvas" class="absolute inset-0 w-full h-full pointer-events-none z-0"></canvas>
+
+  <!-- Container Box -->
+  <div class="relative z-10 w-full max-w-lg min-h-[550px] flex flex-col items-center justify-center text-center p-6">
+    
+    <!-- --------------------------------------- -->
+    <!-- STEP 1: INITIAL FADE IN "Light the bomb 💣" -->
+    <!-- --------------------------------------- -->
+    <div id="introScreen" class="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-1000 z-50">
+      <h1 class="text-4xl sm:text-5xl font-bold text-amber-300 drop-shadow-[0_4px_12px_rgba(245,158,11,0.6)] animate-pulse tracking-wide">
+        Light the bomb 💣
+      </h1>
+      <p class="text-amber-100/70 text-sm mt-3 animate-bounce">
+        ✨ Get ready for a surprise ✨
+      </p>
+    </div>
+
+    <!-- --------------------------------------- -->
+    <!-- STEP 2: BOMB & SPARKLER SCENE -->
+    <!-- --------------------------------------- -->
+    <div id="bombScreen" class="w-full flex flex-col items-center justify-center opacity-0 transition-opacity duration-700 pointer-events-none">
+      
+      <p id="instructionText" class="text-lg sm:text-xl text-amber-200 font-medium mb-6 animate-pulse">
+        👉 Drag the glowing sparkler to the bomb fuse! 🎇
+      </p>
+
+      <!-- Bomb Container -->
+      <div id="bombWrapper" class="relative w-64 h-64 flex items-center justify-center transition-transform duration-300">
+        
+        <!-- Animated Spark Particle Canvas around fuse -->
+        <canvas id="sparkCanvas" class="absolute inset-0 w-full h-full pointer-events-none z-30"></canvas>
+
+        <!-- SVG Sutli Bomb (Custom modeled after traditional Indian green twine bomb) -->
+        <svg viewBox="0 0 240 260" class="w-full h-full drop-shadow-[0_15px_25px_rgba(0,0,0,0.6)] overflow-visible">
+          <!-- Shadow -->
+          <ellipse cx="120" cy="235" rx="75" ry="14" fill="rgba(0,0,0,0.4)" />
+          
+          <!-- FUSE PATH (Pinkish rope weave) -->
+          <path id="fusePath" class="fuse-path" d="M 120 90 C 120 50, 160 30, 175 25" 
+                fill="none" stroke="#e879f9" stroke-width="7" stroke-linecap="round"/>
+          <path id="fuseInnerPath" class="fuse-path" d="M 120 90 C 120 50, 160 30, 175 25" 
+                fill="none" stroke="#f472b6" stroke-width="4" stroke-dasharray="4 4" stroke-linecap="round"/>
+
+          <!-- Top Fuse Cap Socket -->
+          <ellipse cx="120" cy="92" rx="16" ry="7" fill="#1c1917" />
+          
+          <!-- SUTLI BOMB MAIN SPHERE BODY -->
+          <defs>
+            <!-- Green Twine Pattern Gradient -->
+            <radialGradient id="twineGrad" cx="35%" cy="30%" r="65%">
+              <stop offset="0%" stop-color="#34d399" />
+              <stop offset="40%" stop-color="#059669" />
+              <stop offset="80%" stop-color="#065f46" />
+              <stop offset="100%" stop-color="#022c22" />
+            </radialGradient>
+            <!-- Gold Band Metallic Gradient -->
+            <linearGradient id="goldBand" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#d97706" />
+              <stop offset="25%" stop-color="#fef08a" />
+              <stop offset="50%" stop-color="#b45309" />
+              <stop offset="75%" stop-color="#fef08a" />
+              <stop offset="100%" stop-color="#78350f" />
+            </linearGradient>
+            <!-- Red Sticker Tape Gradient -->
+            <linearGradient id="redBand" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#991b1b" />
+              <stop offset="50%" stop-color="#ef4444" />
+              <stop offset="100%" stop-color="#7f1d1d" />
+            </linearGradient>
+          </defs>
+
+          <!-- Main Twine Sphere -->
+          <circle cx="120" cy="160" r="75" fill="url(#twineGrad)" />
+
+          <!-- Twine Texture Overlay Lines -->
+          <g stroke="#047857" stroke-width="2.5" opacity="0.6" fill="none">
+            <!-- Wrapped twine horizontal & diagonal loops -->
+            <path d="M 48 140 Q 120 120 192 140" />
+            <path d="M 45 155 Q 120 135 195 155" />
+            <path d="M 46 170 Q 120 150 194 170" />
+            <path d="M 50 185 Q 120 165 190 185" />
+            <path d="M 58 200 Q 120 180 182 200" />
+            <!-- Vertical/Diagonal Weave lines -->
+            <path d="M 60 110 Q 100 160 65 210" />
+            <path d="M 90 90 Q 120 160 95 230" />
+            <path d="M 120 85 Q 140 160 135 235" />
+            <path d="M 150 90 Q 160 160 168 225" />
+            <path d="M 178 110 Q 170 160 185 200" />
+          </g>
+          
+          <g stroke="#065f46" stroke-width="2" opacity="0.4" fill="none">
+            <path d="M 46 130 Q 120 170 194 130" />
+            <path d="M 48 150 Q 120 190 192 150" />
+            <path d="M 52 175 Q 120 215 188 175" />
+          </g>
+
+          <!-- Middle Red & Gold Festive Paper Sticker Band -->
+          <!-- Outer Gold Edges -->
+          <path d="M 45 150 Q 120 135 195 150 L 194 172 Q 120 157 46 172 Z" fill="url(#goldBand)" />
+          <!-- Inner Red Strip -->
+          <path d="M 45 153 Q 120 138 195 153 L 194 169 Q 120 154 46 169 Z" fill="url(#redBand)" />
+          <!-- Inner Fine Gold Ribbon Center -->
+          <path d="M 45 160 Q 120 145 195 160" stroke="#fef08a" stroke-width="1.5" fill="none" opacity="0.9"/>
+        </svg>
+
+        <!-- Target Zone near fuse tip (invisible touch target) -->
+        <div id="fuseTarget" class="absolute top-[8px] right-[40px] w-14 h-14 rounded-full border-2 border-dashed border-amber-400/30 flex items-center justify-center">
+          <span class="w-3 h-3 bg-amber-400/50 rounded-full animate-ping"></span>
+        </div>
+      </div>
+
+      <!-- Draggable Sparkler (Positioned Bottom Right initially) -->
+      <div id="sparkler" class="fixed bottom-8 right-8 cursor-grab active:cursor-grabbing z-40 touch-none flex flex-col items-center transition-transform duration-75">
+        
+        <!-- Glowing Tip with Spark Effects -->
+        <div id="sparklerTip" class="relative w-6 h-6 rounded-full bg-amber-200 glow-spark flex items-center justify-center sparkler-tip-active">
+          <div class="w-3 h-3 bg-white rounded-full animate-ping"></div>
+        </div>
+        
+        <!-- Sparkler Metallic Coating Rod -->
+        <div class="w-2.5 h-24 bg-gradient-to-b from-gray-300 via-gray-400 to-gray-600 rounded-t-sm shadow-md"></div>
+        <!-- Wire Handle -->
+        <div class="w-1.5 h-20 bg-gradient-to-b from-gray-500 to-gray-800 rounded-b-md"></div>
+
+        <span class="absolute -bottom-6 text-xs text-amber-200 font-medium whitespace-nowrap bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-sm border border-amber-500/30">
+          ✨ Drag Me!
+        </span>
+      </div>
+
+    </div>
+
+    <!-- --------------------------------------- -->
+    <!-- STEP 3: PHOTO REVEAL SCREEN ("Ye mera patakha hai") -->
+    <!-- --------------------------------------- -->
+    <div id="photoScreen" class="hidden flex-col items-center justify-center w-full transition-all duration-700">
+      
+      <!-- Cute Text above photo -->
+      <h2 class="text-3xl sm:text-4xl font-bold text-amber-300 drop-shadow-[0_4px_15px_rgba(251,191,36,0.8)] mb-6 tracking-wide animate-bounce">
+        Ye mera patakha hai 😋😝💥
+      </h2>
+
+      <!-- Framed Photo Container -->
+      <div class="relative group">
+        <!-- Glowing aura frame -->
+        <div class="absolute -inset-1.5 bg-gradient-to-r from-amber-400 via-pink-500 to-yellow-400 rounded-3xl blur-md opacity-80 group-hover:opacity-100 transition duration-1000 animate-pulse"></div>
+        
+        <div class="relative w-64 h-72 sm:w-72 sm:h-80 rounded-2xl overflow-hidden border-4 border-amber-200 shadow-2xl bg-slate-900 flex flex-col items-center justify-center">
+          <!-- Stuti's Image with fallback if file isn't present yet -->
+          <img id="stutiImg" src="stuti.jpg" alt="Stuti" 
+               class="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+               onerror="this.onerror=null; this.src='https://placehold.co/600x700/831843/fef08a?text=Add+stuti.jpg+here!+💖';" />
+        </div>
+
+        <!-- Decorative Sparkle Corner Badges -->
+        <div class="absolute -top-4 -left-4 text-3xl animate-spin" style="animation-duration: 8s;">✨</div>
+        <div class="absolute -bottom-4 -right-4 text-3xl animate-bounce">🪔</div>
+      </div>
+
+      <!-- Next Button -->
+      <button id="nextBtn" class="mt-8 px-8 py-3.5 bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white font-bold text-xl rounded-full shadow-lg hover:shadow-pink-500/50 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 border border-amber-200/40 glow-gold">
+        Next 💖
+      </button>
+    </div>
+
+    <!-- --------------------------------------- -->
+    <!-- STEP 4: FINAL ROMANTIC CARD -->
+    <!-- --------------------------------------- -->
+    <div id="finalCard" class="hidden flex-col items-center justify-center w-full text-center space-y-6 transition-all duration-1000 scale-90 opacity-0">
+      
+      <!-- Decorative Diya top -->
+      <div class="text-5xl animate-float">🪔</div>
+
+      <div class="space-y-4 max-w-md bg-slate-900/60 backdrop-blur-md p-8 rounded-3xl border border-amber-400/30 shadow-[0_0_50px_rgba(245,158,11,0.25)]">
+        
+        <!-- Main Heading -->
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-rose-300 to-amber-200 drop-shadow-md leading-tight">
+          I LOVE YOU SO MUCH STUTIII ❤️🫶🏻
+        </h1>
+
+        <div class="w-24 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto rounded-full my-3"></div>
+
+        <!-- Subheading 1 -->
+        <p class="text-xl sm:text-2xl font-semibold text-amber-200 drop-shadow">
+          You make life colourful 🌟🌟
+        </p>
+
+        <!-- Subheading 2 -->
+        <p class="text-2xl sm:text-3xl font-bold font-handwriting text-pink-300 drop-shadow-[0_2px_8px_rgba(244,114,182,0.6)] pt-2">
+          Happyyy deepavaliii mudhuu 🎆🪔
+        </p>
+
+      </div>
+
+      <!-- Replay Button -->
+      <button id="replayBtn" class="mt-4 px-6 py-2 bg-slate-800/80 hover:bg-slate-700 text-amber-300 rounded-full text-sm font-medium border border-amber-500/30 transition-all duration-300">
+        🔄 Relive the Sparkle
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Audio Context Synthesizer Script for Fireworks & Sparkler Sound Effects -->
+  <script>
+    // Audio Synthesizer for SFX without external asset dependencies
+    const AudioFX = {
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      },
+      // Sparkler Hissing Sound
+      playHiss() {
+        this.init();
+        if (!this.ctx) return null;
+        
+        const bufferSize = this.ctx.sampleRate * 2;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const output = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = Math.random() * 2 - 1;
+        }
+
+        const whiteNoise = this.ctx.createBufferSource();
+        whiteNoise.buffer = buffer;
+        whiteNoise.loop = true;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 3000;
+        filter.Q.value = 3;
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+
+        whiteNoise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        whiteNoise.start();
+        return {
+          stop: () => {
+            try {
+              gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.2);
+              setTimeout(() => whiteNoise.stop(), 200);
+            } catch (e) {}
+          }
+        };
+      },
+      // Boom Explosion Sound
+      playBoom() {
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        
+        // Deep bass oscillator
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.exponentialRampToValueAtTime(30, now + 0.8);
+
+        gain.gain.setValueAtTime(1, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.8);
+
+        // Explosion noise burst
+        const bufferSize = this.ctx.sampleRate * 0.8;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const output = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.1));
+        }
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.8, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
+
+        noise.connect(noiseGain);
+        noiseGain.connect(this.ctx.destination);
+
+        noise.start(now);
+      }
+    };
+
+    // Global State & Elements
+    const introScreen = document.getElementById('introScreen');
+    const bombScreen = document.getElementById('bombScreen');
+    const photoScreen = document.getElementById('photoScreen');
+    const finalCard = document.getElementById('finalCard');
+    
+    const sparkler = document.getElementById('sparkler');
+    const sparklerTip = document.getElementById('sparklerTip');
+    const fuseTarget = document.getElementById('fuseTarget');
+    const bombWrapper = document.getElementById('bombWrapper');
+    const fusePath = document.getElementById('fusePath');
+    const fuseInnerPath = document.getElementById('fuseInnerPath');
+    const instructionText = document.getElementById('instructionText');
+    const nextBtn = document.getElementById('nextBtn');
+    const replayBtn = document.getElementById('replayBtn');
+
+    let fuseLit = false;
+    let hissSound = null;
+
+    // ---------------------------------------
+    // STEP 1: INITIAL ANIMATED TIMELINE
+    // ---------------------------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      // 1. Display "Light the bomb 💣" for ~2.5 seconds, then fade out
+      setTimeout(() => {
+        introScreen.style.opacity = '0';
+        setTimeout(() => {
+          introScreen.classList.add('hidden');
+          bombScreen.classList.remove('opacity-0');
+          bombScreen.classList.add('opacity-100');
+          bombScreen.style.pointerEvents = 'auto';
+        }, 1000);
+      }, 2500);
+      
+      initBgCanvas();
+      initSparklerCanvas();
+    });
+
+    // ---------------------------------------
+    // SPARKLER DRAG LOGIC (Mouse & Touch)
+    // ---------------------------------------
+    let isDragging = false;
+    let offset = { x: 0, y: 0 };
+
+    const getCoords = (e) => {
+      if (e.touches && e.touches[0]) {
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+      return { x: e.clientX, y: e.clientY };
+    };
+
+    const startDrag = (e) => {
+      if (fuseLit) return;
+      isDragging = true;
+      AudioFX.init(); // Initialize audio context on first user touch/click
+      const coords = getCoords(e);
+      const rect = sparkler.getBoundingClientRect();
+      offset.x = coords.x - rect.left;
+      offset.y = coords.y - rect.top;
+      
+      // Remove fixed positioning constraints for drag
+      sparkler.style.bottom = 'auto';
+      sparkler.style.right = 'auto';
+      moveDrag(e);
+    };
+
+    const moveDrag = (e) => {
+      if (!isDragging || fuseLit) return;
+      e.preventDefault();
+      const coords = getCoords(e);
+      const x = coords.x - offset.x;
+      const y = coords.y - offset.y;
+      
+      sparkler.style.left = `${x}px`;
+      sparkler.style.top = `${y}px`;
+
+      // Check proximity to Fuse Target
+      checkFuseProximity();
+    };
+
+    const stopDrag = () => {
+      isDragging = false;
+    };
+
+    sparkler.addEventListener('mousedown', startDrag);
+    window.addEventListener('mousemove', moveDrag);
+    window.addEventListener('mouseup', stopDrag);
+
+    sparkler.addEventListener('touchstart', startDrag, { passive: false });
+    window.addEventListener('touchmove', moveDrag, { passive: false });
+    window.addEventListener('touchend', stopDrag);
+
+    // ---------------------------------------
+    // FUSE IGNITION & BLASTER LOGIC
+    // -------------------------------------
+function checkFuseProximity() {
+      if (fuseLit) return;
+
+      const tipRect = sparklerTip.getBoundingClientRect();
+      const targetRect = fuseTarget.getBoundingClientRect();
+
+      const tipCenter = {
+        x: tipRect.left + tipRect.width / 2,
+        y: tipRect.top + tipRect.height / 2
+      };
+      
+      const targetCenter = {
+        x: targetRect.left + targetRect.width / 2,
+        y: targetRect.top + targetRect.height / 2
+      };
+
+      const dist = Math.hypot(tipCenter.x - targetCenter.x, tipCenter.y - targetCenter.y);
+
+      // Trigger point distance
+      if (dist < 45) {
+        igniteFuse();
+      }
+    }
+
+    function igniteFuse() {
+      fuseLit = true;
+      instructionText.textContent = "🔥 FUSE IS LIT! STAND BACK!! 🔥";
+      instructionText.classList.remove('animate-pulse');
+      instructionText.classList.add('text-red-400', 'font-bold', 'animate-bounce');
+
+      // Start sparkler hiss sound
+      hissSound = AudioFX.playHiss();
+
+      // Animate SVG Fuse burning down
+      fusePath.style.strokeDashoffset = "200";
+      fuseInnerPath.style.strokeDashoffset = "200";
+      
+      // Start fuse burning spark particles
+      startFuseSparks();
+
+      // Start Bomb Shaking after 500ms
+      setTimeout(() => {
+        bombWrapper.classList.add('animate-vibrate');
+      }, 500);
+
+      // Trigger Blast after 2 seconds
+      setTimeout(() => {
+        triggerBlast();
+      }, 2200);
+    }
+
+    function triggerBlast() {
+      if (hissSound) hissSound.stop();
+      AudioFX.playBoom();
+
+      // Firework Confetti Explosion
+      const count = 200;
+      const defaults = { origin: { y: 0.5 } };
+
+      function fire(particleRatio, opts) {
+        confetti(Object.assign({}, defaults, opts, {
+          particleCount: Math.floor(count * particleRatio)
+        }));
+      }
+
+      fire(0.25, { spread: 26, startVelocity: 55, colors: ['#fbbf24', '#f43f5e', '#a855f7'] });
+      fire(0.2, { spread: 60, colors: ['#ffffff', '#f59e0b'] });
+      fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+      fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, colors: ['#e11d48', '#fbbf24'] });
+      fire(0.1, { spread: 120, startVelocity: 45 });
+
+      // Screen flash & hide bomb
+      bombScreen.style.transition = 'all 0.3s ease-out';
+      bombScreen.style.transform = 'scale(1.4)';
+      bombScreen.style.opacity = '0';
+
+      setTimeout(() => {
+        bombScreen.classList.add('hidden');
+        sparkler.classList.add('hidden');
+        
+        // Show Photo Screen with smooth fade in
+        photoScreen.classList.remove('hidden');
+        photoScreen.classList.add('flex');
+        setTimeout(() => {
+          photoScreen.style.opacity = '1';
+        }, 50);
+
+        // Side mini continuous celebratory bursts
+        launchAmbientFireworks();
+      }, 350);
+    }
+
+    // ---------------------------------------
+    // STEP 3 -> STEP 4 NEXT BUTTON TRANSITION
+    // ---------------------------------------
+    nextBtn.addEventListener('click', () => {
+      AudioFX.init();
+      photoScreen.style.opacity = '0';
+      photoScreen.style.transform = 'scale(0.9)';
+
+      setTimeout(() => {
+        photoScreen.classList.add('hidden');
+        photoScreen.classList.remove('flex');
+
+        finalCard.classList.remove('hidden');
+        finalCard.classList.add('flex');
+        
+        setTimeout(() => {
+          finalCard.classList.remove('scale-90', 'opacity-0');
+          finalCard.classList.add('scale-100', 'opacity-100');
+        }, 50);
+
+        // Grand final fireworks celebration
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+      }, 500);
+    });
+
+    replayBtn.addEventListener('click', () => {
+      window.location.reload();
+    });
+
+    // ---------------------------------------
+    // CANVAS PARTICLE SYSTEM (Sparkler & Fuse Sparks)
+    // ---------------------------------------
+    let sparkCanvas, sparkCtx;
+    let sparkParticles = [];
+
+    function initSparklerCanvas() {
+      sparkCanvas = document.getElementById('sparkCanvas');
+      sparkCtx = sparkCanvas.getContext('2d');
+      sparkCanvas.width = 256;
+      sparkCanvas.height = 256;
+      requestAnimationFrame(updateSparks);
+    }
+
+    function startFuseSparks() {
+      // Continuously spawn sparks at fuse tip coordinate inside SVG
+      const interval = setInterval(() => {
+        if (!fuseLit) {
+          clearInterval(interval);
+          return;
+        }
+        // Approximate fuse tip position
+        for (let i = 0; i < 6; i++) {
+          sparkParticles.push({
+            x: 185 + (Math.random() * 10 - 5),
+            y: 30 + (Math.random() * 10 - 5),
+            vx: (Math.random() - 0.5) * 6,
+            vy: (Math.random() - 0.5) * 6 - 2,
+            size: Math.random() * 4 + 2,
+            color: ['#fef08a', '#fbbf24', '#f97316', '#ef4444'][Math.floor(Math.random() * 4)],
+            life: 1
+          });
+        }
+      }, 30);
+    }
+
+    function updateSparks() {
+      if (sparkCtx) {
+        sparkCtx.clearRect(0, 0, sparkCanvas.width, sparkCanvas.height);
+        
+        for (let i = sparkParticles.length - 1; i >= 0; i--) {
+          const p = sparkParticles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= 0.04;
+
+          if (p.life <= 0) {
+            sparkParticles.splice(i, 1);
+            continue;
+          }
+
+          sparkCtx.save();
+          sparkCtx.globalAlpha = p.life;
+          sparkCtx.fillStyle = p.color;
+          sparkCtx.beginPath();
+          sparkCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          sparkCtx.fill();
+          sparkCtx.restore();
+        }
+      }
+      requestAnimationFrame(updateSparks);
+    }
+
+    // ---------------------------------------
+    // BACKGROUND AMBIENT SPARKS & STARS
+    // ---------------------------------------
+    function initBgCanvas() {
+      const bgCanvas = document.getElementById('bgCanvas');
+      const ctx = bgCanvas.getContext('2d');
+
+      function resize() {
+        bgCanvas.width = window.innerWidth;
+        bgCanvas.height = window.innerHeight;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      const stars = Array.from({ length: 60 }, () => ({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        size: Math.random() * 2 + 1,
+        alpha: Math.random(),
+        speed: Math.random() * 0.02 + 0.005
+      }));
+
+      function render() {
+        ctx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+        
+        stars.forEach(s => {
+          s.alpha += s.speed;
+          if (s.alpha > 1 || s.alpha < 0) s.speed = -s.speed;
+
+          ctx.fillStyle = `rgba(254, 240, 138, ${Math.abs(s.alpha)})`;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        requestAnimationFrame(render);
+      }
+      render();
+    }
+
+    function launchAmbientFireworks() {
+      const duration = 3 * 1000;
+      const animationEnd = Date.now() + duration;
+
+      const interval = setInterval(function() {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) {
+          return clearInterval(interval);
+        }
+        const particleCount = 20 * (timeLeft / duration);
+        confetti({
+          particleCount,
+          startVelocity: 30,
+          spread: 360,
+          origin: { x: Math.random(), y: Math.random() * 0.5 }
+        });
+      }, 450);
+    }
+  </script>
+</body>
+</html>
